@@ -11,8 +11,8 @@ current:
   # Componentes incluidos en esta versión
   components:
     frontend:
-      app.smarterbot.cl: "0.1.0"
-      dash.smarterbot.cl: "0.0.0"  # No inicializado
+      app.smarterbot.cl: "0.1.0"        # Dashboard operativo (Clerk + Supabase)
+      chatwoot.smarterbot.cl: "2.10.1"  # Mensajería operativa
       mkt.smarterbot.cl: "0.0.0"
       store.smarterbot.cl: "0.0.0"
       docs.smarterbot.cl: "0.0.0"

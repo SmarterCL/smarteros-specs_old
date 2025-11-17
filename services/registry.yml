@@ -152,29 +152,16 @@ services:
       expected_status: 200
       interval: "15m"
   
-  - id: "chatwoot"
-    name: "Chatwoot Customer Support"
-    type: "backend"
+  - name: "chatwoot"
+    version: "2.10.1"
+    description: "Plataforma de mensajería omnicanal (WhatsApp, Email, Web Chat)"
     status: "active"
     url: "https://chatwoot.smarterbot.cl"
-    tech_stack:
-      platform: "Chatwoot"
-      version: "3.13.0"
-      language: "Ruby on Rails"
-      database: "PostgreSQL"
-      cache: "Redis"
-    deployment:
-      platform: "Docker (VPS)"
-      container_name: "chatwoot"
-      image: "chatwoot/chatwoot:latest"
-      volumes:
-        - "chatwoot-data:/app/storage"
-      ports:
-        - "3000:3000"
-    health_check:
-      endpoint: "/api"
-      expected_status: 200
-      interval: "10m"
+    repository: "https://github.com/chatwoot/chatwoot"
+    healthCheck: "/"
+    dependencies:
+      - postgres
+      - redis
   
   - id: "botpress"
     name: "Botpress Conversational AI"

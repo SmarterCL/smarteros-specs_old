@@ -27,8 +27,8 @@ structure:
 # Arquitectura del OS
 architecture:
   frontend:
-    - app.smarterbot.cl       # Web app principal
-    - dash.smarterbot.cl      # Dashboard multi-tenant
+    - app.smarterbot.cl       # SmarterOS Hub (Dashboard principal)
+    - chatwoot.smarterbot.cl  # Mensajería unificada (WhatsApp, Email, Web)
     - mkt.smarterbot.cl       # Marketing site
     - store.smarterbot.cl     # Marketplace de skills
     - docs.smarterbot.cl      # Documentación técnica
