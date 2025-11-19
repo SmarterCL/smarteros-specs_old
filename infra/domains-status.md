@@ -1,19 +1,30 @@
 # Comparación Dominios: Configurados vs Specs
-Fecha: 2025-11-18T18:54:25.770Z
+**Última actualización:** 2025-11-19T14:45:00.000Z
 
-## ✅ Dominios Activos y Configurados
+## ✅ Dominios Activos y Configurados (19/20)
 
 | Dominio | Estado Actual | En Specs | Backend | Notas |
 |---------|---------------|----------|---------|-------|
-| kpi.smarterbot.cl | ✅ Activo | ❌ No | Metabase:3000 | Nuevo, no en registry |
+| kpi.smarterbot.cl | ✅ Activo | ✅ Sí | Metabase:3000 | HTTP/2 200 |
+| kpi.smarterbot.store | ✅ Activo | ✅ Sí | Metabase:3000 | Nuevo alias |
+| crm.smarterbot.cl | ✅ Activo | ✅ Sí | Chatwoot:3000 | Nuevo alias |
+| chatwoot.smarterbot.cl | ✅ Activo | ✅ Sí | Chatwoot:3000 | HTTP/2 200 |
+| erp.smarterbot.cl | ✅ Activo | ✅ Sí | Odoo:8069 | Nuevo alias |
+| odoo.smarterbot.cl | ✅ Activo | ✅ Sí | Odoo:8069 | HTTP/2 200 |
 | portainer.smarterbot.cl | ✅ Activo | ✅ Sí | Portainer:9000 | Coincide |
-| dokploy.smarterbot.cl | ✅ Activo | ✅ Sí | Dokploy:3000 | Coincide |
-| dokploy.smarterbot.store | ✅ Activo | ❌ No | Dokploy:3000 | Alias nuevo |
-| n8n.smarterbot.cl | ✅ Activo | ✅ Sí | N8N:5678 | Coincide |
-| odoo.smarterbot.cl | ✅ Activo | ✅ Sí | Odoo:8069 | Coincide |
-| chatwoot.smarterbot.cl | ✅ Activo | ✅ Sí | Chatwoot:3000 | Coincide |
-| chat.smarterbot.cl | ✅ Activo | ❌ No | Botpress:3000 | Specs usa botpress.smarterbot.cl |
-| ai.smarterbot.store | ✅ Activo | ❌ No | Nexa:8000 | Nuevo |
+| dokploy.smarterbot.cl | ✅ Activo | ✅ Sí | Dokploy:3000 | HTTP/2 200 |
+| dokploy.smarterbot.store | ✅ Activo | ✅ Sí | Dokploy:3000 | HTTP/2 200 |
+| mcp.smarterbot.cl | ✅ Activo | ✅ Sí | MCP Registry:80 | HTTP/2 200 |
+| mcp.smarterbot.store | ✅ Activo | ✅ Sí | MCP Registry:80 | HTTP/2 200 |
+| api.smarterbot.cl | ✅ Activo | ✅ Sí | Traefik:80 | HTTP/2 308 (redirect) |
+| api.smarterbot.store | ✅ Activo | ✅ Sí | Traefik:80 | HTTP/2 308 (redirect) |
+| n8n.smarterbot.cl | ✅ Activo | ✅ Sí | N8N:5678 | HTTP/2 200 |
+| chat.smarterbot.cl | ✅ Activo | ✅ Sí | Botpress:3000 | HTTP/2 200 |
+| mkt.smarterbot.cl | ✅ Activo | ✅ Sí | BlogBowl:3002 | HTTP/2 404 (app) |
+| mkt.smarterbot.store | ✅ Activo | ✅ Sí | BlogBowl:3002 | HTTP/2 404 (app) |
+| ai.smarterbot.store | ✅ Activo | ✅ Sí | Nexa:8000 | HTTP/2 404 (app) |
+| mainkey.smarterbot.cl | ⏳ DNS Pending | ✅ Sí | Vault:8080 | Caddy configured |
+| mainkey.smarterbot.store | ⏳ DNS Pending | ✅ Sí | Vault:8080 | Caddy configured |
 
 ## 📋 Dominios en Specs NO Configurados
 
