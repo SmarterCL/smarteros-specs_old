@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements-bolt.txt /tmp/requirements-bolt.txt
+COPY docker/requirements-bolt.txt /tmp/requirements-bolt.txt
 RUN pip install --no-cache-dir -r /tmp/requirements-bolt.txt && \
     rm /tmp/requirements-bolt.txt
 

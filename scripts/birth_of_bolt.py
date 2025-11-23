@@ -34,7 +34,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
-import openai
+from openai import OpenAI
 
 # Configuration
 SPECS_DIR = Path("/root/smarteros/specs")
@@ -54,7 +54,7 @@ class BoltGenerator:
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable not set")
         
-        openai.api_key = self.api_key
+        self.client = OpenAI(api_key=self.api_key)
         self.specs = {}
         self.results = {
             "generated": [],
@@ -94,7 +94,7 @@ class BoltGenerator:
         print(f"📝 Generating {doc_type}...")
         
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
