@@ -1,0 +1,49 @@
+name: OpenSpec Contract Validation
+
+on:
+  pull_request:
+    paths:
+      - 'openspec/specs/**'
+  push:
+    branches: [main, master]
+
+jobs:
+  validate-specs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install OpenSpec
+        run: npm install -g @fission-ai/openspec
+      
+      - name: Validate Specs
+        run: |
+          cd openspec/specs
+          for spec in *.yaml; do
+            echo "Validando $spec..."
+            openspec check "$spec" || exit 1
+          done
+      
+      - name: Check Breaking Changes
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Generando diff de contratos..."
+          git fetch origin ${{ github.base_ref }}
+          for spec in openspec/specs/*.yaml; do
+            if git show origin/${{ github.base_ref }}:$spec > /tmp/base-$spec 2>/dev/null; then
+              echo "Comparando $spec..."
+              openspec diff /tmp/base-$spec $spec || echo "⚠️ Breaking change detectado en $spec"
+            fi
+          done
+      
+      - name: Generate Documentation
+        run: |
+          echo "📝 Specs validados correctamente"
+          echo "📊 Sistema bajo gobierno de contrato"

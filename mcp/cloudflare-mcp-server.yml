@@ -1,0 +1,229 @@
+# 🌐 Cloudflare MCP Server - Official
+# Updated: 2025-11-29
+
+version: "1.0"
+source: "official"
+repository: "https://github.com/cloudflare/mcp-server-cloudflare"
+package: "@cloudflare/mcp-server-cloudflare"
+installed: true
+installation_date: "2025-11-29T15:24:24Z"
+
+metadata:
+  name: "Cloudflare MCP Server"
+  category: "infrastructure"
+  tier: 5
+  provider: "cloudflare"
+  deployment: "local"
+  status: "active"
+
+description: |
+  Servidor MCP oficial de Cloudflare para gestión completa de infraestructura DNS.
+  
+  Permite:
+  - ✅ Gestionar registros DNS (A, AAAA, CNAME, MX, TXT, CAA, etc.)
+  - ✅ Listar y gestionar zonas
+  - ✅ Configurar Workers y Pages
+  - ✅ Análisis de tráfico y analytics
+  - ✅ Gestión de certificados SSL
+  - ✅ Configuración de Firewall y WAF
+
+tools:
+  dns_management:
+    - list_zones
+    - list_dns_records
+    - create_dns_record
+    - update_dns_record
+    - delete_dns_record
+  
+  ssl_certificates:
+    - list_certificates
+    - order_certificate
+    - verify_certificate
+  
+  analytics:
+    - get_zone_analytics
+    - get_dns_analytics
+    - get_traffic_stats
+  
+  workers:
+    - list_workers
+    - deploy_worker
+    - update_worker
+  
+  pages:
+    - list_pages
+    - deploy_page
+
+authentication:
+  method: "api_token"
+  required: true
+  
+  setup: |
+    1. Ve a: https://dash.cloudflare.com/profile/api-tokens
+    2. Create Token → Edit zone DNS (o Custom Token)
+    3. Permisos requeridos:
+       - Zone:DNS:Edit
+       - Zone:Zone:Read
+       - Account:Account Settings:Read
+    4. Zone Resources: Include → smarterbot.store (y otros dominios)
+    5. Copia el token generado
+  
+  configuration: |
+    # Variables de entorno
+    export CLOUDFLARE_API_TOKEN="tu-token-aqui"
+    export CLOUDFLARE_ACCOUNT_ID="8e82c6c200713eab4033d93a6bdaa891"
+    
+    # O crear archivo .env
+    echo "CLOUDFLARE_API_TOKEN=tu-token" > /root/.cloudflare-mcp.env
+    echo "CLOUDFLARE_ACCOUNT_ID=8e82c6c200713eab4033d93a6bdaa891" >> /root/.cloudflare-mcp.env
+
+installation:
+  global:
+    command: "npm install -g @cloudflare/mcp-server-cloudflare"
+    installed_at: "2025-11-29T15:24:24Z"
+    version: "latest"
+  
+  run:
+    direct: "npx -y @cloudflare/mcp-server-cloudflare"
+    global: "mcp-server-cloudflare"
+
+usage:
+  cli:
+    test: |
+      # Probar conexión
+      npx @cloudflare/mcp-server-cloudflare --help
+    
+    examples: |
+      # Listar zonas
+      mcp-call cloudflare list_zones
+      
+      # Agregar registro DNS
+      mcp-call cloudflare create_dns_record \
+        --zone-id 81f7371c0a9d1e1a6fa9f6ff77eac8b0 \
+        --type CAA \
+        --name smarterbot.store \
+        --data '{"flags":0,"tag":"issue","value":"amazon.com"}'
+
+  integration:
+    claude_desktop: |
+      # Archivo: ~/Library/Application Support/Claude/claude_desktop_config.json
+      {
+        "mcpServers": {
+          "cloudflare": {
+            "command": "npx",
+            "args": ["-y", "@cloudflare/mcp-server-cloudflare"],
+            "env": {
+              "CLOUDFLARE_API_TOKEN": "tu-token",
+              "CLOUDFLARE_ACCOUNT_ID": "8e82c6c200713eab4033d93a6bdaa891"
+            }
+          }
+        }
+      }
+    
+    cursor: |
+      # Similar a Claude Desktop
+      
+    smarteros_mcp: |
+      # Integración con SmarterOS MCP
+      # Ver: /root/smarteros-mcp/src/integrations/cloudflare.ts
+
+credentials:
+  location: "/root/vault-secrets/cloudflare.json"
+  
+  current:
+    zone_id: "81f7371c0a9d1e1a6fa9f6ff77eac8b0"
+    account_id: "8e82c6c200713eab4033d93a6bdaa891"
+    api_token: "REQUIRED - See setup instructions"
+  
+  vault_path: "smarteros/integrations/cloudflare"
+
+domains_managed:
+  - smarterbot.cl
+  - smarterbot.store
+  - nunex.lat
+
+common_tasks:
+  add_caa_record: |
+    # Agregar CAA para Amazon/AWS (Systeme.io)
+    mcp-call cloudflare create_dns_record \
+      --zone-id 81f7371c0a9d1e1a6fa9f6ff77eac8b0 \
+      --type CAA \
+      --name smarterbot.store \
+      --data '{"flags":0,"tag":"issue","value":"amazon.com"}'
+    
+    mcp-call cloudflare create_dns_record \
+      --zone-id 81f7371c0a9d1e1a6fa9f6ff77eac8b0 \
+      --type CAA \
+      --name smarterbot.store \
+      --data '{"flags":0,"tag":"issuewild","value":"amazon.com"}'
+  
+  add_subdomain: |
+    # Agregar subdominio A record
+    mcp-call cloudflare create_dns_record \
+      --zone-id 81f7371c0a9d1e1a6fa9f6ff77eac8b0 \
+      --type A \
+      --name nuevo.smarterbot.store \
+      --content 89.116.23.167 \
+      --proxied true
+  
+  add_cname: |
+    # Agregar CNAME
+    mcp-call cloudflare create_dns_record \
+      --zone-id 81f7371c0a9d1e1a6fa9f6ff77eac8b0 \
+      --type CNAME \
+      --name servicio.smarterbot.store \
+      --content target.example.com \
+      --proxied false
+
+troubleshooting:
+  token_error: |
+    Error: Invalid API token
+    
+    Solución:
+    1. Verifica que el token tenga permisos correctos
+    2. Verifica que no haya expirado
+    3. Regenera el token si es necesario
+  
+  zone_not_found: |
+    Error: Zone not found
+    
+    Solución:
+    1. Verifica el zone_id
+    2. Asegúrate que el token tenga acceso a esa zona
+  
+  rate_limit: |
+    Error: Rate limit exceeded
+    
+    Solución:
+    1. Espera unos minutos
+    2. Reduce la frecuencia de llamadas
+    3. Considera usar batch operations
+
+resources:
+  documentation: "https://developers.cloudflare.com/api/"
+  mcp_docs: "https://github.com/cloudflare/mcp-server-cloudflare"
+  api_reference: "https://api.cloudflare.com/"
+  dashboard: "https://dash.cloudflare.com"
+
+scripts:
+  add_caa_amazon: "/root/add-cloudflare-caa-amazon.sh"
+  configure_dns: "/root/configure-dns-cloudflare.sh"
+
+integration_status:
+  smarteros_mcp: "pending"
+  n8n: "available"
+  cli: "available"
+  ai_agents: "available"
+
+next_steps:
+  - "Configurar CLOUDFLARE_API_TOKEN en variables de entorno"
+  - "Agregar registros CAA para Amazon (Systeme.io)"
+  - "Integrar con SmarterOS MCP Server"
+  - "Crear workflow N8N para DNS automation"
+  - "Documentar casos de uso comunes"
+
+notes: |
+  - MCP Server instalado globalmente el 2025-11-29
+  - Requiere API Token con permisos DNS Edit
+  - Zone ID y Account ID ya configurados
+  - Listo para agregar CAA records para Systeme.io

@@ -1,0 +1,46 @@
+# Tenant: Demo Nano Banana
+tenant_id: demo-nanobanana
+rut: "77.222.333-4"
+display_name: "Nano Banana Demo"
+domain: "demo.nanobanana.cl"
+
+services:
+  api: enabled
+  odoo: disabled
+  chatwoot: enabled
+  n8n: enabled
+  mcp: disabled
+  metabase: disabled
+
+plan:
+  code: "starter"
+  limits:
+    workflows: 10
+    users: 3
+    api_calls_per_day: 1000
+    storage_gb: 10
+
+clerk:
+  features:
+    - automation_access
+    - whatsapp_send
+
+n8n:
+  base_url: "https://n8n.smarterbot.cl"
+  workflow_tags:
+    - "tenant:demo-nanobanana"
+    - "demo"
+
+chatwoot:
+  base_url: "https://chatwoot.smarterbot.cl"
+  inboxes:
+    - name: "WhatsApp Demo"
+      channel: whatsapp
+      phone: "+56987654321"
+
+metadata:
+  created_at: "2025-11-20T00:00:00Z"
+  updated_at: "2025-11-26T10:37:00Z"
+  owner_email: "demo@nanobanana.cl"
+  status: trial
+  trial_ends_at: "2025-12-20T00:00:00Z"

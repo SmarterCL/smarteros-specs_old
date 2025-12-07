@@ -1,0 +1,93 @@
+# Workflow: Sincronización Odoo → Chatwoot
+id: sync-odoo-chatwoot
+name: "Sync Odoo Chatwoot"
+description: "Sincroniza contactos y conversaciones entre Odoo y Chatwoot"
+version: "1.0.0"
+
+trigger:
+  type: webhook
+  schedule: "*/15 * * * *"  # cada 15 minutos
+  on_events:
+    - odoo_contact_created
+    - odoo_contact_updated
+    - chatwoot_conversation_created
+
+n8n:
+  base_url: "https://n8n.smarterbot.cl"
+  workflow_id: "sync-odoo-chatwoot-main"
+  webhook_path: "/webhook/sync-odoo-chatwoot"
+  tags:
+    - sync
+    - crm
+    - automation
+
+inputs:
+  - name: tenant_id
+    type: string
+    required: true
+  - name: sync_direction
+    type: string
+    enum: ["odoo_to_chatwoot", "chatwoot_to_odoo", "bidirectional"]
+    default: "bidirectional"
+  - name: sync_type
+    type: string
+    enum: ["contacts", "conversations", "all"]
+    default: "all"
+
+actions:
+  - step: 1
+    name: fetch_odoo_contacts
+    type: http
+    method: POST
+    endpoint: "${ODOO_URL}/api/v1/res.partner"
+    condition: "${inputs.sync_type} in ['contacts', 'all']"
+    
+  - step: 2
+    name: sync_contacts_to_chatwoot
+    type: loop
+    items: "${step1.response}"
+    action:
+      type: http
+      method: POST
+      endpoint: "${CHATWOOT_URL}/api/v1/contacts"
+      body:
+        name: "${item.name}"
+        email: "${item.email}"
+        phone_number: "${item.phone}"
+        custom_attributes:
+          odoo_id: "${item.id}"
+          tenant_id: "${inputs.tenant_id}"
+    
+  - step: 3
+    name: fetch_chatwoot_conversations
+    type: http
+    method: GET
+    endpoint: "${CHATWOOT_URL}/api/v1/conversations"
+    condition: "${inputs.sync_type} in ['conversations', 'all']"
+    
+  - step: 4
+    name: create_odoo_activities
+    type: loop
+    items: "${step3.response}"
+    action:
+      type: http
+      method: POST
+      endpoint: "${ODOO_URL}/api/v1/mail.activity"
+      body:
+        res_model: "res.partner"
+        res_id: "${item.contact.custom_attributes.odoo_id}"
+        summary: "Conversación Chatwoot #${item.id}"
+        note: "${item.messages[0].content}"
+
+outputs:
+  - name: contacts_synced
+    value: "${step2.processed_count}"
+  - name: conversations_synced
+    value: "${step4.processed_count}"
+
+monitoring:
+  log_all_steps: true
+  metrics:
+    - contacts_synced_count
+    - conversations_synced_count
+    - sync_duration_ms

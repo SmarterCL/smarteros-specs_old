@@ -1,0 +1,125 @@
+# Workflow: Onboarding completo de tenant
+id: onboarding-tenant
+name: "Onboarding Tenant"
+description: "Flujo completo de alta de tenant desde specs"
+version: "1.0.0"
+
+trigger:
+  type: manual
+  on_events:
+    - tenant_created
+    - tenant_activated
+
+n8n:
+  base_url: "https://n8n.smarterbot.cl"
+  workflow_id: "onboarding-tenant-main"
+  webhook_path: "/webhook/onboarding-tenant"
+  tags:
+    - onboarding
+    - automation
+
+inputs:
+  - name: tenant_id
+    type: string
+    required: true
+    description: "ID único del tenant"
+  - name: rut
+    type: string
+    required: true
+    pattern: "^\\d{2}\\.\\d{3}\\.\\d{3}-[\\dkK]$"
+  - name: display_name
+    type: string
+    required: true
+  - name: domain
+    type: string
+    required: true
+  - name: owner_email
+    type: string
+    required: true
+    format: email
+  - name: plan_code
+    type: string
+    required: false
+    default: "starter"
+
+actions:
+  - step: 1
+    name: register_tenant_in_api
+    type: http
+    method: POST
+    endpoint: "${API_URL}/api/tenants"
+    body:
+      tenant_id: "${inputs.tenant_id}"
+      rut: "${inputs.rut}"
+      display_name: "${inputs.display_name}"
+      domain: "${inputs.domain}"
+      owner_email: "${inputs.owner_email}"
+      plan: "${inputs.plan_code}"
+    
+  - step: 2
+    name: create_clerk_organization
+    type: clerk_api
+    method: POST
+    endpoint: "/organizations"
+    body:
+      name: "${inputs.display_name}"
+      public_metadata:
+        tenant_id: "${inputs.tenant_id}"
+        rut: "${inputs.rut}"
+        
+  - step: 3
+    name: setup_chatwoot_account
+    type: http
+    method: POST
+    endpoint: "${CHATWOOT_URL}/api/v1/accounts"
+    headers:
+      api_access_token: "${CHATWOOT_ADMIN_TOKEN}"
+    body:
+      name: "${inputs.display_name}"
+      
+  - step: 4
+    name: setup_odoo_customer
+    type: http
+    method: POST
+    endpoint: "${ODOO_URL}/api/v1/res.partner"
+    body:
+      name: "${inputs.display_name}"
+      vat: "${inputs.rut}"
+      email: "${inputs.owner_email}"
+      customer_rank: 1
+      
+  - step: 5
+    name: send_welcome_email
+    type: email
+    template: "welcome-tenant"
+    to: "${inputs.owner_email}"
+    variables:
+      tenant_name: "${inputs.display_name}"
+      login_url: "https://login.smarterbot.store"
+      
+  - step: 6
+    name: notify_admin
+    type: slack
+    channel: "#new-tenants"
+    message: "🎉 Nuevo tenant: ${inputs.display_name} (${inputs.tenant_id})"
+
+outputs:
+  - name: tenant_id
+    value: "${inputs.tenant_id}"
+  - name: clerk_org_id
+    value: "${step2.response.id}"
+  - name: chatwoot_account_id
+    value: "${step3.response.id}"
+  - name: odoo_partner_id
+    value: "${step4.response.id}"
+
+error_handling:
+  retry_count: 3
+  retry_delay: 5000
+  on_failure:
+    - rollback_tenant
+    - notify_error_admin
+
+monitoring:
+  log_all_steps: true
+  alert_on_failure: true

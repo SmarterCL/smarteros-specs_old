@@ -1,0 +1,79 @@
+# Tenant: SmarterBOT (Principal)
+tenant_id: smarterbot
+rut: "76.111.111-1"
+display_name: "SmarterBOT"
+domain: "smarterbot.cl"
+alternate_domains:
+  - "smarterbot.store"
+  - "login.smarterbot.store"
+
+services:
+  api: enabled
+  odoo: enabled
+  chatwoot: enabled
+  n8n: enabled
+  mcp: enabled
+  metabase: enabled
+
+plan:
+  code: "enterprise"
+  limits:
+    workflows: 1000
+    users: 100
+    api_calls_per_day: 100000
+    storage_gb: 500
+
+clerk:
+  features:
+    - database_access
+    - vps_manage
+    - dns_manage
+    - automation_access
+    - whatsapp_send
+    - crm_full_access
+
+n8n:
+  base_url: "https://n8n.smarterbot.cl"
+  workflow_tags:
+    - "tenant:smarterbot"
+    - "production"
+    - "onboarding"
+    - "automation"
+
+odoo:
+  base_url: "https://odoo.smarterbot.cl"
+  database: "smarterbot_prod"
+  modules:
+    - crm
+    - sales
+    - inventory
+    - contacts
+
+chatwoot:
+  base_url: "https://chatwoot.smarterbot.cl"
+  inboxes:
+    - name: "WhatsApp Principal"
+      channel: whatsapp
+      phone: "+56912345678"
+    - name: "Web Widget"
+      channel: web
+
+hostinger:
+  vps_id: "vps_smarterbot_main"
+  domains:
+    - smarterbot.cl
+    - smarterbot.store
+  firewall:
+    - port: 80
+      protocol: tcp
+    - port: 443
+      protocol: tcp
+    - port: 22
+      protocol: tcp
+      source: "trusted_ips"
+
+metadata:
+  created_at: "2025-01-15T00:00:00Z"
+  updated_at: "2025-11-26T10:37:00Z"
+  owner_email: "admin@smarterbot.cl"
+  status: active

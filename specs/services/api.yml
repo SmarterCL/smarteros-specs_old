@@ -1,0 +1,63 @@
+# Service: Smarter OS API
+id: api
+name: "Smarter OS API"
+description: "API central de registro y orquestación"
+version: "1.0.0"
+
+docker:
+  image: "smarteros/api"
+  tag: "latest"
+  build:
+    context: "./tools/smarteros-api"
+    dockerfile: "Dockerfile"
+
+deployment:
+  replicas: 2
+  port: 3000
+  health_check: "/health"
+  
+environment:
+  required:
+    - DATABASE_URL
+    - CLERK_SECRET_KEY
+    - SUPABASE_URL
+    - SUPABASE_ANON_KEY
+  optional:
+    - LOG_LEVEL
+    - PORT
+
+resources:
+  cpu: "1"
+  memory: "1Gi"
+
+endpoints:
+  - path: "/api/specs/sync"
+    method: POST
+    auth: internal
+  - path: "/api/tenants"
+    method: POST
+    auth: clerk
+  - path: "/api/tenants/:tenantId"
+    method: GET
+    auth: clerk
+  - path: "/api/workflows"
+    method: POST
+    auth: internal
+  - path: "/api/deployments"
+    method: POST
+    auth: internal
+  - path: "/api/events/spec-applied"
+    method: POST
+    auth: internal
+
+dependencies:
+  - db
+  - supabase
+
+monitoring:
+  metrics: true
+  logs: true
+  alerts:
+    - type: error_rate
+      threshold: 5
+      window: "5m"

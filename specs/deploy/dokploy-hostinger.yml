@@ -1,0 +1,96 @@
+# Deploy: Dokploy en Hostinger VPS
+id: dokploy-hostinger
+name: "Dokploy Hostinger Production"
+description: "Despliegue principal en VPS de Hostinger"
+environment: production
+
+provider: dokploy
+dokploy:
+  base_url: "https://dokploy.smarterbot.cl"
+  api_token_env: "DOKPLOY_API_TOKEN"
+  project_name: "smarteros"
+
+repository:
+  url: "https://github.com/SmarterCL/smarteros-specs"
+  branch: "main"
+  auto_deploy: true
+  webhook_enabled: true
+
+stack:
+  name: "smarteros-hostinger"
+  compose_file: "docker-compose.smarteros.yml"
+  env_file: ".env.production"
+  network: "smarteros"
+
+services:
+  - name: api
+    replicas: 2
+    health_check: "/health"
+    
+  - name: specs-runner
+    replicas: 1
+    volumes:
+      - "./:/specs:ro"
+    
+  - name: mcp-orchestrator
+    replicas: 1
+    
+  - name: hostinger-mcp
+    replicas: 1
+    image: "mcp/api-mcp-server"
+    
+  - name: n8n-hostinger
+    replicas: 1
+    ports:
+      - "5678:5678"
+    volumes:
+      - "n8n_data:/home/node/.n8n"
+    
+  - name: db
+    replicas: 1
+    image: "postgres:16"
+    volumes:
+      - "db_data:/var/lib/postgresql/data"
+
+volumes:
+  - n8n_data
+  - db_data
+
+caddy:
+  enabled: true
+  domains:
+    - domain: "api.smarterbot.cl"
+      service: api
+      port: 3000
+    - domain: "n8n.smarterbot.cl"
+      service: n8n-hostinger
+      port: 5678
+    - domain: "mcp.smarterbot.cl"
+      service: mcp-orchestrator
+      port: 3001
+
+monitoring:
+  enabled: true
+  metrics_port: 9090
+  logs_retention_days: 30
+
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # 2 AM diario
+  targets:
+    - db_data
+    - n8n_data
+  destination: "s3://smarteros-backups"
+
+rollback:
+  enabled: true
+  keep_versions: 5
+
+notifications:
+  slack:
+    webhook_url_env: "SLACK_WEBHOOK_URL"
+    events:
+      - deployment_started
+      - deployment_success
+      - deployment_failed
+      - health_check_failed

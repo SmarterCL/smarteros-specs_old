@@ -1,0 +1,49 @@
+# Service: Smarter MCP Orchestrator
+id: mcp
+name: "Smarter MCP Orchestrator"
+description: "Orchestrator con validación Clerk Features + Hostinger"
+version: "1.0.0"
+
+docker:
+  image: "smarteros/mcp-orchestrator"
+  tag: "latest"
+  build:
+    context: "./tools/smarter-mcp"
+    dockerfile: "Dockerfile"
+
+deployment:
+  replicas: 1
+  port: 3001
+  health_check: "/health"
+
+environment:
+  required:
+    - HOSTINGER_API_TOKEN
+    - CLERK_SECRET_KEY
+    - HOSTINGER_MCP_URL
+    - N8N_API_URL
+  optional:
+    - LOG_LEVEL
+
+resources:
+  cpu: "0.5"
+  memory: "512Mi"
+
+features:
+  - name: database_access
+    endpoint: "/api/hostinger/databases"
+  - name: vps_manage
+    endpoint: "/api/hostinger/vps"
+  - name: dns_manage
+    endpoint: "/api/hostinger/domains"
+  - name: automation_access
+    endpoint: "/api/n8n/trigger/:workflowId"
+
+dependencies:
+  - hostinger-mcp
+  - n8n-hostinger
+  - api
+
+monitoring:
+  metrics: true
+  logs: true

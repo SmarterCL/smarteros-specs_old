@@ -1,0 +1,43 @@
+# Deploy: Dokploy Staging
+id: dokploy-staging
+name: "Dokploy Staging Environment"
+description: "Ambiente de pruebas pre-producción"
+environment: staging
+
+provider: dokploy
+dokploy:
+  base_url: "https://dokploy-staging.smarterbot.cl"
+  api_token_env: "DOKPLOY_STAGING_TOKEN"
+  project_name: "smarteros-staging"
+
+repository:
+  url: "https://github.com/SmarterCL/smarteros-specs"
+  branch: "develop"
+  auto_deploy: true
+  webhook_enabled: true
+
+stack:
+  name: "smarteros-staging"
+  compose_file: "docker-compose.smarteros.yml"
+  env_file: ".env.staging"
+  network: "smarteros-staging"
+
+services:
+  - name: api
+    replicas: 1
+  - name: specs-runner
+    replicas: 1
+  - name: mcp-orchestrator
+    replicas: 1
+  - name: n8n-hostinger
+    replicas: 1
+
+monitoring:
+  enabled: true
+  
+backup:
+  enabled: false
+
+rollback:
+  enabled: true
+  keep_versions: 3

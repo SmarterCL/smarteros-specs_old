@@ -1,0 +1,24 @@
+{
+  "name": "smarteros-specs-runner",
+  "version": "1.0.0",
+  "description": "Runner que sincroniza specs → API → MCP → n8n → Dokploy",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "yaml": "^2.3.4",
+    "glob": "^10.3.10",
+    "chokidar": "^3.5.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.0"
+  }
+}

@@ -1,0 +1,158 @@
+version: "3.8"
+
+networks:
+  smarteros:
+    external: true
+
+volumes:
+  db_data:
+  n8n_data:
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: smarteros-db
+    networks:
+      - smarteros
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smarteros}
+      POSTGRES_USER: ${POSTGRES_USER:-smarteros}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smarteros}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Smarter OS API
+  api:
+    build:
+      context: ./tools/smarteros-api
+      dockerfile: Dockerfile
+    image: smarteros/api:latest
+    container_name: smarteros-api
+    networks:
+      - smarteros
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smarteros}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smarteros}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      API_INTERNAL_KEY: ${API_INTERNAL_KEY}
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-production}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Specs Runner
+  specs-runner:
+    build:
+      context: ./smarteros-specs-runner
+      dockerfile: Dockerfile
+    image: smarteros/specs-runner:latest
+    container_name: smarteros-specs-runner
+    networks:
+      - smarteros
+    environment:
+      SPECS_DIR: /specs
+      POLL_INTERVAL: 30000
+      WATCH_MODE: "true"
+      API_URL: http://api:3000
+      API_INTERNAL_KEY: ${API_INTERNAL_KEY}
+      N8N_API_URL: ${N8N_API_URL:-https://n8n.smarterbot.cl}
+      N8N_API_KEY: ${N8N_API_KEY}
+      DOKPLOY_URL: ${DOKPLOY_URL}
+      DOKPLOY_API_TOKEN: ${DOKPLOY_API_TOKEN}
+      NODE_ENV: ${NODE_ENV:-production}
+    volumes:
+      - ./:/specs:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Hostinger MCP Server
+  hostinger-mcp:
+    image: mcp/api-mcp-server:latest
+    container_name: hostinger-mcp
+    networks:
+      - smarteros
+    environment:
+      APITOKEN: ${HOSTINGER_API_TOKEN}
+    restart: unless-stopped
+
+  # n8n con Hostinger node
+  n8n-hostinger:
+    image: n8nio/n8n:latest
+    container_name: n8n-hostinger
+    networks:
+      - smarteros
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: ${N8N_HOST:-n8n.smarterbot.cl}
+      N8N_PROTOCOL: https
+      N8N_PORT: 5678
+      WEBHOOK_URL: https://${N8N_HOST:-n8n.smarterbot.cl}
+      GENERIC_TIMEZONE: America/Santiago
+      N8N_METRICS: "true"
+      N8N_LOG_LEVEL: info
+      HOSTINGER_API_TOKEN: ${HOSTINGER_API_TOKEN}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_DB:-n8n}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-smarteros}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    command: >
+      sh -c "
+        npm install -g n8n-nodes-hostinger-api@latest &&
+        n8n start
+      "
+
+  # Smarter MCP Orchestrator
+  mcp-orchestrator:
+    build:
+      context: ./tools/smarter-mcp
+      dockerfile: Dockerfile
+    image: smarteros/mcp-orchestrator:latest
+    container_name: smarter-mcp
+    networks:
+      - smarteros
+    ports:
+      - "3001:3001"
+    environment:
+      HOSTINGER_API_TOKEN: ${HOSTINGER_API_TOKEN}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      HOSTINGER_MCP_URL: http://hostinger-mcp:3000
+      N8N_API_URL: http://n8n-hostinger:5678/api/v1
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-production}
+    depends_on:
+      - hostinger-mcp
+      - n8n-hostinger
+      - api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
