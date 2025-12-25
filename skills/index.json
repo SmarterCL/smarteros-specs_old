@@ -1,0 +1,145 @@
+{
+  "version": "1.0",
+  "skills": [
+    {
+      "id": "evaluar_riesgo_vocal",
+      "name": "Evaluar Riesgo Vocal",
+      "description": "Vocal risk assessment based on VTD Scale and exposure characterization",
+      "category": "health_prevention",
+      "version": "1.0",
+      "status": "stable",
+      "endpoint": "/mcp/execute",
+      "spec": "skills/voz/evaluar_riesgo_vocal.yaml",
+      "permissions": ["authenticated"],
+      "input_example": {
+        "datos_usuario": {
+          "rut": "12.345.678-9",
+          "edad": 45,
+          "genero": "masculino",
+          "profesion": "profesor",
+          "anos_ejercicio": 20
+        },
+        "exposicion_vocal": {
+          "horas_uso_diario": 6,
+          "intensidad": "alta",
+          "entorno": "ruidoso",
+          "uso_equipos": false,
+          "sintomas": ["fatiga", "ronquera"]
+        }
+      },
+      "output_example": {
+        "score_riesgo": 78,
+        "categoria": "alto",
+        "recomendaciones": [
+          "Realizar pausas cada 45 minutos",
+          "Usar equipo de amplificación"
+        ]
+      }
+    },
+    {
+      "id": "monitoreo_preventivo",
+      "name": "Monitoreo Preventivo",
+      "description": "Preventive vocal monitoring with trend analysis and alerts",
+      "category": "health_monitoring",
+      "version": "1.0",
+      "status": "stable",
+      "endpoint": "/mcp/execute",
+      "spec": "skills/voz/monitoreo_preventivo.yaml",
+      "permissions": ["authenticated"],
+      "input_example": {
+        "rut": "12.345.678-9",
+        "historico": [
+          {
+            "fecha": "2025-11-01",
+            "score_riesgo": 65,
+            "horas_uso": 6
+          }
+        ],
+        "frecuencia_uso": {
+          "horas_semanales": 35,
+          "intensidad_promedio": "alta"
+        }
+      },
+      "output_example": {
+        "alertas": [
+          {
+            "nivel": "critica",
+            "mensaje": "Riesgo vocal en aumento"
+          }
+        ],
+        "tendencia": {
+          "direccion": "empeorando",
+          "variacion": 10.7
+        }
+      }
+    },
+    {
+      "id": "dashboard_preventivo",
+      "name": "Dashboard Preventivo",
+      "description": "Institutional preventive dashboard with aggregated data",
+      "category": "institutional_reporting",
+      "version": "1.0",
+      "status": "planned",
+      "endpoint": "/mcp/execute",
+      "spec": "skills/voz/dashboard_preventivo.yaml",
+      "permissions": ["health_professional", "admin"],
+      "input_example": {
+        "institucion_id": "inst_123",
+        "periodo": "2025-Q4",
+        "filtros": {
+          "profesion": "profesor",
+          "riesgo_minimo": "moderado"
+        }
+      },
+      "output_example": {
+        "agregados": {
+          "total_evaluaciones": 120,
+          "promedio_riesgo": 58.2
+        },
+        "tendencias": {
+          "direccion": "estable",
+          "variacion": 2.3
+        }
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "health_prevention",
+      "name": "Prevención en Salud",
+      "description": "Skills focused on health risk prevention and assessment"
+    },
+    {
+      "id": "health_monitoring",
+      "name": "Monitoreo de Salud",
+      "description": "Skills for continuous health monitoring and trend analysis"
+    },
+    {
+      "id": "institutional_reporting",
+      "name": "Reportes Institucionales",
+      "description": "Skills for institutional reporting and compliance"
+    }
+  ],
+  "integration_points": [
+    {
+      "system": "ACHS",
+      "description": "Asociación Chilena de Seguridad prevention programs",
+      "skills": ["evaluar_riesgo_vocal", "monitoreo_preventivo"]
+    },
+    {
+      "system": "SmartCity",
+      "description": "Municipal health monitoring systems",
+      "skills": ["monitoreo_preventivo", "dashboard_preventivo"]
+    },
+    {
+      "system": "Mutual de Seguridad",
+      "description": "Occupational health and safety programs",
+      "skills": ["evaluar_riesgo_vocal"]
+    }
+  ],
+  "compliance": {
+    "data_protection": "Ley 19.628",
+    "health_standards": "Ministerio de Salud",
+    "retention": "5 years for individual data, 2 years for aggregates"
+  }
+}

@@ -1,0 +1,312 @@
+# specs/ach/validate.yaml
+# OpenSpec for ACHS Validation Skill
+# Asociación Chilena de Seguridad - Integration Specification
+entity: ach_validation
+description: "ACHS (Asociación Chilena de Seguridad) validation skill for SmarterOS platform"
+tenant_isolated: true
+fields:
+  id:
+    type: string
+    required: true
+    primary: true
+    description: "Unique ACHS validation record identifier"
+  rut:
+    type: string
+    required: true
+    unique: true
+    description: "Chilean RUT to validate against ACHS system"
+  ach_status:
+    type: string
+    required: true
+    enum: ["activo", "inactivo", "suspendido", "no_encontrado", "error_validacion"]
+    description: "ACHS validation status"
+  entity_type:
+    type: string
+    required: true
+    enum: ["person", "company"]
+    description: "Type of entity being validated"
+  company_name:
+    type: string
+    required: false
+    description: "Company name (if entity_type is company)"
+  certificaciones:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Certification ID"
+        name:
+          type: string
+          description: "Certification name"
+        type:
+          type: string
+          description: "Certification type"
+        issue_date:
+          type: timestamp
+          description: "Certification issue date"
+        expiry_date:
+          type: timestamp
+          description: "Certification expiry date"
+        status:
+          type: string
+          enum: ["active", "expired", "revoked"]
+          description: "Certification status"
+    required: false
+    description: "List of ACHS certifications"
+  risk_profile:
+    type: string
+    required: true
+    enum: ["bajo", "medio", "alto", "critico", "desconocido"]
+    description: "ACHS risk profile assessment"
+  last_validation:
+    type: timestamp
+    required: true
+    description: "Timestamp of last ACHS validation"
+  valid:
+    type: boolean
+    required: true
+    description: "Overall validation result"
+  validation_message:
+    type: string
+    required: false
+    description: "Detailed validation message"
+  ach_reference_id:
+    type: string
+    required: false
+    description: "ACHS internal reference ID"
+  created_at:
+    type: timestamp
+    required: true
+    description: "Record creation timestamp"
+  updated_at:
+    type: timestamp
+    required: true
+    description: "Last update timestamp"
+  tenant_id:
+    type: string
+    required: true
+    description: "Tenant identifier for multi-tenant isolation"
+ingestion:
+  enabled: true
+  supported_types: ["api"]
+  processors:
+    - type: "api"
+      action: "achs_validation"
+      endpoint: "https://api.achs.cl/v1/validation"
+      method: "POST"
+      headers:
+        Authorization: "Bearer {ACHS_API_KEY}"
+        Content-Type: "application/json"
+      timeout: 30
+events:
+  validation_requested:
+    description: "Triggered when ACHS validation is requested"
+    payload:
+      - validation_id
+      - rut
+      - tenant_id
+  validation_completed:
+    description: "Triggered when ACHS validation completes successfully"
+    payload:
+      - validation_id
+      - rut
+      - ach_status
+      - risk_profile
+      - valid
+      - tenant_id
+  validation_failed:
+    description: "Triggered when ACHS validation fails"
+    payload:
+      - validation_id
+      - rut
+      - error
+      - tenant_id
+  certification_expired:
+    description: "Triggered when a certification expires"
+    payload:
+      - validation_id
+      - rut
+      - certification_id
+      - certification_name
+      - tenant_id
+  risk_profile_updated:
+    description: "Triggered when risk profile changes"
+    payload:
+      - validation_id
+      - rut
+      - old_risk_profile
+      - new_risk_profile
+      - tenant_id
+validation:
+  rules:
+    - field: rut
+      type: chilean_rut
+      required: true
+    - field: ach_status
+      type: enum
+      values: ["activo", "inactivo", "suspendido", "no_encontrado", "error_validacion"]
+      required: true
+    - field: risk_profile
+      type: enum
+      values: ["bajo", "medio", "alto", "critico", "desconocido"]
+      required: true
+    - field: entity_type
+      type: enum
+      values: ["person", "company"]
+      required: true
+    - field: certificaciones
+      type: certification_array
+      required: false
+      validItems:
+        - id: string
+        - name: string
+        - type: string
+        - issue_date: timestamp
+        - expiry_date: timestamp
+        - status: enum["active", "expired", "revoked"]
+relationships:
+  customer:
+    type: many-to-one
+    entity: customer
+    foreign_key: rut
+  tenant:
+    type: many-to-one
+    entity: tenant
+    foreign_key: tenant_id
+skills:
+  ach.validate:
+    description: "Validate RUT against ACHS system"
+    input:
+      rut: string (required)
+      entity_type: string (optional, default: "person")
+    output:
+      ach_status: string
+      certificaciones: array
+      risk_profile: string
+      valid: boolean
+      validation_message: string
+    permissions: ["authenticated"]
+    endpoint: "/mcp/execute"
+    method: "POST"
+    example:
+      request:
+        skill: "ach.validate"
+        input:
+          rut: "12.345.678-9"
+      response:
+        ach_status: "activo"
+        certificaciones:
+          - id: "CERT-2024-001"
+            name: "Curso Seguridad EPP"
+            type: "seguridad"
+            status: "active"
+        risk_profile: "bajo"
+        valid: true
+        validation_message: "Validación exitosa"
+  ach.check_certification:
+    description: "Check specific certification status"
+    input:
+      rut: string (required)
+      certification_id: string (required)
+    output:
+      certification: object
+      valid: boolean
+    permissions: ["authenticated"]
+    endpoint: "/mcp/execute"
+  ach.get_risk_profile:
+    description: "Get risk profile for RUT"
+    input:
+      rut: string (required)
+    output:
+      risk_profile: string
+      risk_details: object
+      valid: boolean
+    permissions: ["authenticated"]
+    endpoint: "/mcp/execute"
+security:
+  requirements:
+    - ACHS_API_KEY must be stored in vault
+    - All requests must use HTTPS
+    - RUT must be validated before ACHS call
+    - Rate limiting: 10 requests per minute per tenant
+    - Cache: 24 hours for validation results
+  compliance:
+    - Ley 19.628: Data protection
+    - ACHS terms of service
+    - ISO 27001: Information security
+  audit:
+    - All validation requests logged
+    - Sensitive data masked in logs
+    - Retention: 2 years
+---
+# ACHS Integration Notes
+
+## Configuration
+
+Environment variables required:
+```env
+ACHS_API_KEY=your_achs_api_key
+ACHS_API_URL=https://api.achs.cl/v1
+ACHS_TIMEOUT=30
+ACHS_CACHE_TTL=86400
+```
+
+## Error Handling
+
+Common error codes:
+- `ACHS-404`: RUT not found in ACHS system
+- `ACHS-401`: Invalid API key
+- `ACHS-429`: Rate limit exceeded
+- `ACHS-500`: Internal ACHS error
+- `ACHS-503`: Service unavailable
+
+## Testing
+
+Mock endpoint for development:
+```
+POST /mcp/mock/achs
+{
+  "rut": "12.345.678-9",
+  "scenario": "active_with_certifications"
+}
+```
+
+## Compliance
+
+This integration complies with:
+- Chilean labor laws
+- ACHS data protection policies
+- SmarterOS security standards
+- ISO 27001 information security
+
+## Usage Example
+
+```javascript
+// Node.js example
+const response = await fetch('https://api.smarteros.cl/mcp/execute', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    skill: 'ach.validate',
+    input: {
+      rut: '12.345.678-9'
+    }
+  })
+});
+
+const result = await response.json();
+console.log(result.ach_status); // "activo"
+console.log(result.risk_profile); // "bajo"
+```
+
+## Version History
+
+v1.0 - Initial specification
+v1.1 - Added certification array structure
+v1.2 - Added risk profile events
+v1.3 - Added security requirements

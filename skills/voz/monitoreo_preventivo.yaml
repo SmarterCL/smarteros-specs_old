@@ -1,0 +1,315 @@
+# skills/voz/monitoreo_preventivo.yaml
+# OpenSpec Skill for Preventive Vocal Monitoring
+# Based on longitudinal data and predictive analysis
+skill: monitoreo_preventivo
+description: "Preventive vocal monitoring skill for longitudinal risk assessment"
+tenant_isolated: true
+version: "1.0"
+status: "stable"
+category: "health_monitoring"
+input:
+  type: object
+  required:
+    - rut
+    - historico
+  properties:
+    rut:
+      type: string
+      description: "Chilean RUT for identification"
+    historico:
+      type: array
+      items:
+        type: object
+        properties:
+          fecha:
+            type: string
+            format: date
+            description: "Assessment date"
+          score_riesgo:
+            type: number
+            description: "Vocal risk score"
+          categoria:
+            type: string
+            enum: ["bajo", "moderado", "alto", "critico"]
+            description: "Risk category"
+          horas_uso:
+            type: number
+            description: "Daily vocal usage hours"
+          sintomas:
+            type: array
+            items:
+              type: string
+            description: "Reported symptoms"
+    frecuencia_uso:
+      type: object
+      description: "Current vocal usage frequency"
+      properties:
+        horas_semanales:
+          type: number
+          description: "Weekly vocal usage hours"
+        dias_semana:
+          type: number
+          description: "Days per week with vocal usage"
+        intensidad_promedio:
+          type: string
+          enum: ["baja", "media", "alta"]
+          description: "Average intensity"
+output:
+  type: object
+  properties:
+    alertas:
+      type: array
+      items:
+        type: object
+        properties:
+          tipo:
+            type: string
+            description: "Alert type"
+          nivel:
+            type: string
+            enum: ["informativa", "advertencia", "critica"]
+            description: "Alert level"
+          mensaje:
+            type: string
+            description: "Alert message"
+          accion_recomendada:
+            type: string
+            description: "Recommended action"
+    tendencia:
+      type: object
+      properties:
+        direccion:
+          type: string
+          enum: ["mejorando", "estable", "empeorando"]
+          description: "Risk trend direction"
+        variacion:
+          type: number
+          description: "Percentage variation"
+        periodo:
+          type: string
+          description: "Analysis period"
+    recomendaciones:
+      type: array
+      items:
+        type: object
+        properties:
+          tipo:
+            type: string
+            description: "Recommendation type"
+          prioridad:
+            type: string
+            enum: ["baja", "media", "alta"]
+            description: "Priority level"
+          descripcion:
+            type: string
+            description: "Detailed description"
+          plazo:
+            type: string
+            description: "Recommended timeframe"
+    indicadores:
+      type: object
+      properties:
+        fatiga_acumulada:
+          type: number
+          description: "Accumulated fatigue index"
+        riesgo_proyectado:
+          type: number
+          description: "Projected risk score"
+        umbral_critico:
+          type: boolean
+          description: "Critical threshold flag"
+    timestamp:
+      type: string
+      format: date-time
+      description: "Monitoring timestamp"
+    tenant_id:
+      type: string
+      description: "Tenant identifier"
+execution:
+  endpoint: "/mcp/execute"
+  method: "POST"
+  permissions: ["authenticated"]
+  timeout: 45
+  example:
+    request:
+      skill: "monitoreo_preventivo"
+      input:
+        rut: "12.345.678-9"
+        historico:
+          - fecha: "2025-11-01"
+            score_riesgo: 65
+            categoria: "alto"
+            horas_uso: 6
+            sintomas: ["fatiga"]
+          - fecha: "2025-11-15"
+            score_riesgo: 72
+            categoria: "alto"
+            horas_uso: 7
+            sintomas: ["fatiga", "ronquera"]
+        frecuencia_uso:
+          horas_semanales: 35
+          dias_semana: 5
+          intensidad_promedio: "alta"
+    response:
+      alertas:
+        - tipo: "riesgo_elevado"
+          nivel: "critica"
+          mensaje: "Riesgo vocal en aumento sostenido"
+          accion_recomendada: "Evaluación profesional inmediata"
+      tendencia:
+        direccion: "empeorando"
+        variacion: 10.7
+        periodo: "últimos 30 días"
+      recomendaciones:
+        - tipo: "intervención"
+          prioridad: "alta"
+          descripcion: "Reducir carga vocal en 30%"
+          plazo: "7 días"
+        - tipo: "prevención"
+          prioridad: "media"
+          descripcion: "Implementar protocolos de pausas"
+          plazo: "15 días"
+      indicadores:
+        fatiga_acumulada: 8.8
+        riesgo_proyectado: 85
+        umbral_critico: true
+      timestamp: "2025-12-25T12:00:00Z"
+      tenant_id: "tenant_456"
+events:
+  monitoreo_iniciado:
+    description: "Triggered when preventive monitoring starts"
+    payload:
+      - monitoring_id
+      - rut
+      - tenant_id
+  alerta_generada:
+    description: "Triggered when an alert is generated"
+    payload:
+      - monitoring_id
+      - rut
+      - alert_type
+      - alert_level
+      - tenant_id
+  umbral_critico:
+    description: "Triggered when critical threshold is reached"
+    payload:
+      - monitoring_id
+      - rut
+      - risk_score
+      - recommendations
+      - tenant_id
+  recomendacion_enviada:
+    description: "Triggered when recommendations are sent"
+    payload:
+      - monitoring_id
+      - rut
+      - recommendation_type
+      - tenant_id
+validation:
+  rules:
+    - field: rut
+      type: chilean_rut
+      required: true
+    - field: historico
+      type: array
+      minItems: 2
+      required: true
+    - field: historico[*].score_riesgo
+      type: number
+      min: 0
+      max: 100
+      required: true
+    - field: frecuencia_uso.horas_semanales
+      type: number
+      min: 0
+      max: 168
+      required: true
+relationships:
+  usuario:
+    type: many-to-one
+    entity: customer
+    foreign_key: rut
+  evaluaciones:
+    type: many-to-many
+    entity: evaluar_riesgo_vocal
+    foreign_key: rut
+  tenant:
+    type: many-to-one
+    entity: tenant
+    foreign_key: tenant_id
+security:
+  requirements:
+    - User consent required for monitoring
+    - Data retention: 2 years
+    - Compliance with health data protection
+    - Anonymization for institutional reports
+  permissions:
+    - authenticated: Can view own monitoring
+    - health_professional: Can view all monitoring
+    - admin: Can configure alerts
+---
+# Preventive Monitoring Algorithm
+
+## Scientific Basis
+
+Based on:
+- Longitudinal analysis of vocal risk
+- Predictive modeling from empirical data
+- Trend analysis algorithms
+
+## Analysis Method
+
+```
+// Calculate trend
+tendencia = calculate_trend(historico.score_riesgo)
+
+// Project risk
+riesgo_proyectado = predict_risk(
+  tendencia,
+  frecuencia_uso,
+  historico.sintomas
+)
+
+// Generate alerts
+alertas = generate_alerts(
+  riesgo_proyectado,
+  fatiga_acumulada
+)
+```
+
+## Alert Levels
+
+- **Informativa:** Variación < 5%
+- **Advertencia:** Variación 5-15%
+- **Crítica:** Variación > 15% o riesgo proyectado > 80
+
+## Integration Points
+
+### ACHS Prevention Programs
+- Alerts can trigger ACHS interventions
+- Data can feed prevention dashboards
+- Compatible with occupational health protocols
+
+### Institutional Monitoring
+- Aggregated data for institutional reports
+- Trend analysis for policy making
+- Compliance reporting
+
+### SmartCity Health
+- Integration with municipal health systems
+- Public health monitoring
+- Early intervention programs
+
+## Compliance
+
+This skill complies with:
+- Occupational health regulations
+- Data protection laws
+- Ethical monitoring guidelines
+- Institutional reporting standards
+
+## Version History
+
+v1.0 - Initial specification
+v1.1 - Added trend analysis
+v1.2 - Added ACHS integration points
